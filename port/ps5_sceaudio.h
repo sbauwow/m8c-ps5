@@ -4,8 +4,11 @@
 // resolved by the payload loader against the system module at runtime) but
 // ships no header for it. These signatures match the SDK's generated stubs
 // and the PS4 headers the audio backend was written against; sceUserService
-// is linked only to satisfy the stub archive, its functions are not called
-// (the PS4 port passes the system user id constant directly).
+// supplies the foreground user id the controller-speaker port needs.
+//
+// Port/user rules measured on 11.60 (Radio app audio-probe.txt): MAIN opens
+// only with the SYSTEM user id (0xFF); PADSPK opens only with the real
+// foreground user id and only in S16 MONO (stereo -> 0x80260007).
 #ifndef PS5_SCEAUDIO_H_
 #define PS5_SCEAUDIO_H_
 
@@ -21,9 +24,21 @@ int32_t sceAudioOutOpen(SceUserServiceUserId user_id, int port_type, int index,
 int32_t sceAudioOutOutput(int32_t handle, const void *ptr);
 int32_t sceAudioOutClose(int32_t handle);
 
+// Submits one buffer per port and blocks once, keeping several ports in step.
+typedef struct {
+  int32_t handle;
+  const void *ptr;
+} SceAudioOutOutputParam;
+int32_t sceAudioOutOutputs(SceAudioOutOutputParam *param, uint32_t num);
+
+int32_t sceUserServiceInitialize(void *params);
+int32_t sceUserServiceGetForegroundUser(SceUserServiceUserId *user_id);
+
 // Names the PS4 audio backend uses (kept so the backend ports verbatim).
 #define ORBIS_USER_SERVICE_USER_ID_SYSTEM SCE_USER_SERVICE_USER_ID_SYSTEM
 #define ORBIS_AUDIO_OUT_PORT_TYPE_MAIN 0
+#define ORBIS_AUDIO_OUT_PORT_TYPE_PADSPK 4
+#define ORBIS_AUDIO_OUT_PARAM_FORMAT_S16_MONO 0
 #define ORBIS_AUDIO_OUT_PARAM_FORMAT_S16_STEREO 1
 
 #endif

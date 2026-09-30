@@ -124,6 +124,14 @@ Clean single-instance run: 0 SLIP errors, iso 176 KB/s, 0 underruns.
 Render is ~15 fps (present ~26 ms: 1080p software scale + tile blit + vsync).
 SDL_SetThreadPriority fails on PS5 (pthread_setschedparam) - harmless.
 
+## Controller speaker (2026-09-30)
+
+config [audio] audio_device_name: Default = TV, speaker = DualSense speaker,
+both = TV + speaker (sceAudioOutOutputs keeps the two ports in step).
+PADSPK needs the foreground user id + S16 MONO (stereo mixed down); MAIN
+needs the SYSTEM user id. Opened fine on console (uid 292064011), no
+underruns with both; audibility confirmed by ear = pending.
+
 ## Open items
 
 1. TV display mirror: needs launch as "bigapp" (Homebrew Loader PKG context)
