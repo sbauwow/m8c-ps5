@@ -110,6 +110,20 @@ Black screen had two causes:
    render.c; now shares the PS4 window-surface + software-renderer path.
 Each hbldr launch replaces the previous app (one bigapp at a time).
 
+## Flicker + choppy audio fix (2026-09-30)
+
+Cause: a stray daemon=1 instance (hbldr names it "payload", child of
+websrv; invisible to a grep for m8c) kept running headless. Two instances
+on one M8 split the bulk + iso streams: SLIP corruption -> invalid packets
+-> reset_display (flicker), and each got half the audio (88 KB/s, underruns).
+hbldr daemon=0 launches replace the running bigapp; daemon=1 ones do NOT.
+Fix: /data/m8c.pid single-instance guard (ps5_kill_previous_instance).
+Also: rx ring 64 KiB -> 1 MiB with a ringdrop counter (was 0 in the test,
+so not the cause), 30 fps render cap, render timing in the log.
+Clean single-instance run: 0 SLIP errors, iso 176 KB/s, 0 underruns.
+Render is ~15 fps (present ~26 ms: 1080p software scale + tile blit + vsync).
+SDL_SetThreadPriority fails on PS5 (pthread_setschedparam) - harmless.
+
 ## Open items
 
 1. TV display mirror: needs launch as "bigapp" (Homebrew Loader PKG context)

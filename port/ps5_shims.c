@@ -5,6 +5,11 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
 
 #include <SDL.h>
 
@@ -78,4 +83,38 @@ const char *ps5_pref_path(const char *filename) {
   static char path[512];
   snprintf(path, sizeof(path), "/data/m8c_%s", filename);
   return path;
+}
+
+#define PIDFILE "/data/m8c.pid"
+
+// hbldr names its processes "payload" (daemon=1) or after the ELF file.
+static int looks_like_m8c(pid_t pid) {
+  int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+  struct kinfo_proc ki;
+  size_t len = sizeof(ki);
+  if (sysctl(mib, 4, &ki, &len, NULL, 0) != 0 || len == 0) {
+    return 0; // gone
+  }
+  return strcmp(ki.ki_comm, "payload") == 0 || strcmp(ki.ki_comm, "eboot.elf") == 0 ||
+         strncmp(ki.ki_comm, "m8c", 3) == 0;
+}
+
+int ps5_kill_previous_instance(void) {
+  int killed = 0;
+  FILE *f = fopen(PIDFILE, "r");
+  if (f) {
+    int old = 0;
+    if (fscanf(f, "%d", &old) == 1 && old > 1 && old != getpid() && looks_like_m8c(old) &&
+        kill(old, SIGKILL) == 0) {
+      killed = old;
+      usleep(500 * 1000); // let the kernel release its USB interfaces
+    }
+    fclose(f);
+  }
+  f = fopen(PIDFILE, "w");
+  if (f) {
+    fprintf(f, "%d\n", getpid());
+    fclose(f);
+  }
+  return killed;
 }

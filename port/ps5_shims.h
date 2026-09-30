@@ -22,6 +22,12 @@ void ps5_stage_once(const char *msg);
 // printf-style line directly to /data/m8c.log.
 void ps5_logf(const char *fmt, ...);
 
+// Single-instance guard. Kills the m8c recorded in /data/m8c.pid if it is
+// still alive, then records this process. Two instances on one M8 each get
+// half the USB stream: garbled screen (SLIP corruption) + half-rate audio.
+// Returns the killed pid, or 0. Call before the log and USB are opened.
+int ps5_kill_previous_instance(void);
+
 // Replaces SDL_GetPrefPath("", file) on PS5: flat /data/m8c_<file>.
 const char *ps5_pref_path(const char *filename);
 

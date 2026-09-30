@@ -94,7 +94,11 @@ int main(const int argc, char *argv[]) {
   ps4_stage("BUILD-C7"); // build identity marker
 #endif
 #ifdef PS5
+  const int killed_pid = ps5_kill_previous_instance();
   ps4_log_init(); // SDL_Log -> /data/m8c.log before anything else logs
+  if (killed_pid) {
+    SDL_Log("killed previous m8c instance, pid %d", killed_pid);
+  }
   SDL_Log("m8c PS5 starting");
   ps4_stage("BUILD-C7-PS5"); // build identity marker
 #endif
