@@ -60,7 +60,15 @@ run: $(ELF)
 	python3 $(HOME)/ps5-jailbreak/scripts/send_payload.py $(PS5_HOST) $(ELF) $(PS5_PORT)
 	@echo "launched; read results: curl ftp://$(PS5_HOST):2121/data/m8c.log"
 
+# Launch as a real app. daemon=0 is REQUIRED: a daemon=1 hbldr launch gets no
+# direct-memory budget, SDL's 64 MiB framebuffer alloc fails with EAGAIN and
+# the TV stays black (USB + audio still work, which hides the problem).
+deploy: $(ELF)
+	curl -s -T $(ELF) ftp://$(PS5_HOST):2121/data/homebrew/m8c/eboot.elf
+	curl -s --max-time 6 "http://$(PS5_HOST):8080/hbldr?pipe=0&daemon=0&path=/data/homebrew/m8c/eboot.elf"
+	@echo "launched; log: curl ftp://$(PS5_HOST):2121/data/m8c.log"
+
 clean:
 	rm -rf $(OBJDIR) $(ELF)
 
-.PHONY: all run clean
+.PHONY: all run deploy clean

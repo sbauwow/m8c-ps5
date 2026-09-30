@@ -99,6 +99,17 @@ stayed in display mode until the app's init re-set it.
   input mapping untested (SDL 2.30.12 - PS4's hand-written DS4 mapping
   dance should NOT be needed, but verify buttons in-app).
 
+## TV output fix (2026-09-30)
+
+Black screen had two causes:
+1. hbldr `daemon=1` launches get NO direct-memory budget: SDL's ps5 video
+   driver allocates a fixed 64 MiB (sceKernelAllocateMainDirectMemory) and
+   gets EAGAIN. Launch with `daemon=0` (`make deploy`). Proved with a
+   standalone probe: same alloc succeeds under daemon=0.
+2. PS5 build took the desktop SDL_INIT_EVERYTHING + OpenGL branch in
+   render.c; now shares the PS4 window-surface + software-renderer path.
+Each hbldr launch replaces the previous app (one bigapp at a time).
+
 ## Open items
 
 1. TV display mirror: needs launch as "bigapp" (Homebrew Loader PKG context)

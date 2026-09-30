@@ -46,7 +46,10 @@ static uint8_t dirty = 0;
 // Initializes SDL and creates a renderer and required surfaces
 int initialize_sdl(const int init_fullscreen, const int init_use_gpu) {
 
-#ifdef PS4
+#if defined(PS4) || defined(PS5)
+  // PS5 shares this path: the generic SDL_INIT_EVERYTHING + OpenGL window +
+  // SDL_CreateRenderer branch failed there (black screen). The PS5 SDL 'ps5'
+  // driver presents the window surface on SDL_UpdateWindowSurface, same as PS4.
   // PS4 (znullptr SDL2): no GL/video-driver renderer. Follow the proven
   // OpenOrbis SDL2 sample: plain window -> window surface -> software
   // renderer. SDL_INIT_EVERYTHING + SDL_WINDOW_OPENGL crashes here
@@ -77,7 +80,8 @@ int initialize_sdl(const int init_fullscreen, const int init_use_gpu) {
     win_w = dm.w;
     win_h = dm.h;
   }
-  SDL_Log("window %dx%d (display %dx%d)", win_w, win_h, dm.w, dm.h);
+  SDL_Log("video driver %s, window %dx%d (display %dx%d)", SDL_GetCurrentVideoDriver(), win_w,
+          win_h, dm.w, dm.h);
   win = SDL_CreateWindow("m8c", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, win_w, win_h, 0);
   if (win == NULL) {
     SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "CreateWindow: %s\n", SDL_GetError());
