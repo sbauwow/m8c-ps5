@@ -356,8 +356,8 @@ void display_keyjazz_overlay(const uint8_t show, const uint8_t base_octave,
 }
 
 void render_screen() {
-#ifdef PS5
-  // Each present is a 1080p software scale + tile blit + vsync wait. Cap at
+#if defined(PS4) || defined(PS5)
+  // Each present is a 1080p software scale + framebuffer copy. Cap at
   // 30 fps so the main loop keeps draining serial data between presents.
   static uint32_t last_present = 0;
   if (dirty && SDL_GetTicks() - last_present < 33) {
@@ -387,7 +387,7 @@ void render_screen() {
     SDL_SetRenderTarget(rend, maintexture);
 
     fps++;
-#ifdef PS5
+#if defined(PS4) || defined(PS5)
     last_present = SDL_GetTicks();
     const uint32_t cost = last_present - t0;
     cost_sum += cost;
@@ -398,8 +398,9 @@ void render_screen() {
 
     if (SDL_GetTicks() - ticks_fps > 5000) {
       ticks_fps = SDL_GetTicks();
-#ifdef PS5
-      SDL_Log("render: %.1f fps, present avg %u ms max %u ms", (float)fps / 5,
+#if defined(PS4) || defined(PS5)
+      // ps4_logf, not SDL_Log: SDL_Log never reaches the log file on PS4.
+      ps4_logf("render: %.1f fps, present avg %u ms max %u ms", (float)fps / 5,
               fps ? cost_sum / fps : 0, cost_max);
       cost_sum = cost_max = 0;
 #endif

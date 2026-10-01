@@ -27,7 +27,7 @@ int32_t sceAudioOutClose(int32_t handle);
 // Submits one buffer per port and blocks once, keeping several ports in step.
 typedef struct {
   int32_t handle;
-  const void *ptr;
+  const void *pointer; // OpenOrbis' spelling, so the backend is shared with PS4
 } SceAudioOutOutputParam;
 int32_t sceAudioOutOutputs(SceAudioOutOutputParam *param, uint32_t num);
 

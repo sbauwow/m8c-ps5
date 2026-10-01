@@ -91,7 +91,7 @@ int main(const int argc, char *argv[]) {
 #if defined(PS4) || defined(PS5)
   ps4_log_init(); // SDL_Log -> /data/m8c.log before anything else logs
   SDL_Log("m8c PS4 starting");
-  ps4_stage("BUILD-C7"); // build identity marker
+  ps4_stage("BUILD-C8"); // build identity marker
 #endif
 #ifdef PS5
   const int killed_pid = ps5_kill_previous_instance();
@@ -100,7 +100,7 @@ int main(const int argc, char *argv[]) {
     SDL_Log("killed previous m8c instance, pid %d", killed_pid);
   }
   SDL_Log("m8c PS5 starting");
-  ps4_stage("BUILD-C7-PS5"); // build identity marker
+  ps4_stage("BUILD-C8-PS5"); // build identity marker
 #endif
   slip_init(&slip, &slip_descriptor);
 
@@ -273,9 +273,9 @@ int main(const int argc, char *argv[]) {
             break;
           case msg_toggle_audio:
             toggle_audio(conf.audio_buffer_size, conf.audio_device_name);
-#ifdef PS5
+#if defined(PS4) || defined(PS5)
             // Keep the choice for reconnects and the next launch.
-            conf.audio_device_name = ps5_audio_mode_name();
+            conf.audio_device_name = ps4_audio_mode_name();
             write_config(&conf);
 #endif
             break;
@@ -352,10 +352,10 @@ int main(const int argc, char *argv[]) {
   gamecontrollers_close();
   close_renderer();
   close_serial_port();
-#ifdef PS5
+#if defined(PS4) || defined(PS5)
   // M8 and audio are released; hand control back to the home screen. Done
   // before SDL_Quit, which hung on the PS4 port.
-  ps5_exit_to_home();
+  ps4_exit_to_home();
 #endif
   SDL_free(serial_buf);
   SDL_Quit();

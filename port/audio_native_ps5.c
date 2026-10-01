@@ -16,7 +16,6 @@
 
 #include "audio.h"
 #include "ps4_shims.h"
-#include "ps5_shims.h"
 #include "usb_ps4.h"
 #include "usbio_ps4.h"
 
@@ -135,7 +134,7 @@ static int out_thread_fn(void *arg) {
     if (pad_handle > 0) {
       outs[n++] = (SceAudioOutOutputParam){pad_handle, mono_buf};
     }
-    int32_t orc = n == 1 ? sceAudioOutOutput(outs[0].handle, outs[0].ptr) : sceAudioOutOutputs(outs, n);
+    int32_t orc = n == 1 ? sceAudioOutOutput(outs[0].handle, outs[0].pointer) : sceAudioOutOutputs(outs, n);
     if (orc < 0) {
       ps4_logf("audio: output failed 0x%08X", orc);
       break;
@@ -279,10 +278,10 @@ void toggle_audio(unsigned int audio_buffer_size, const char *output_device_name
 
   char msg[64];
   SDL_snprintf(msg, sizeof(msg), "m8c audio: %s", mode_labels[cur_mode]);
-  ps5_notify(msg);
+  ps4_notify(msg);
 
   if (out_handle <= 0 && pad_handle <= 0) {
-    ps5_notify("m8c audio: no output could be opened");
+    ps4_notify("m8c audio: no output could be opened");
     return;
   }
   in_frames = in_pos = 0;
@@ -290,4 +289,4 @@ void toggle_audio(unsigned int audio_buffer_size, const char *output_device_name
   out_thread = SDL_CreateThread(out_thread_fn, "m8c_audio_out", NULL);
 }
 
-const char *ps5_audio_mode_name(void) { return mode_names[cur_mode]; }
+const char *ps4_audio_mode_name(void) { return mode_names[cur_mode]; }

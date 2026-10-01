@@ -148,3 +148,10 @@ Quit combo: R3 + Create (or L2); reset display: L3 + Create.
 2. Verify DS/DualSense button input through SDL 2.30.12.
 3. Fix the watchdog underflow (harmless but noisy).
 4. Audio is left-channel-only on PS4 headset; same check needed on PS5.
+
+## Parity with m8c-ps4 (2026-09-30)
+
+app/src is byte-identical in both repos. Console hooks call ps4_notify /
+ps4_exit_to_home / ps4_audio_mode_name; port/ps4_shims.h maps them to the
+ps5_ versions. audio_native_ps5.c == audio_native_ps4.c except the header
+block. PS5-only: the pidfile guard + BUILD-C8-PS5 marker (hbldr launch model).

@@ -11,5 +11,8 @@
 #define ps4_stage_once ps5_stage_once
 #define ps4_logf ps5_logf
 #define ps4_pref_path ps5_pref_path
+#define ps4_notify ps5_notify
+#define ps4_exit_to_home ps5_exit_to_home
+#define ps4_audio_mode_name ps5_audio_mode_name
 
 #endif
