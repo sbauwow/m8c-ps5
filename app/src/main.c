@@ -347,6 +347,11 @@ int main(const int argc, char *argv[]) {
   gamecontrollers_close();
   close_renderer();
   close_serial_port();
+#ifdef PS5
+  // M8 and audio are released; hand control back to the home screen. Done
+  // before SDL_Quit, which hung on the PS4 port.
+  ps5_exit_to_home();
+#endif
   SDL_free(serial_buf);
   SDL_Quit();
   return 0;

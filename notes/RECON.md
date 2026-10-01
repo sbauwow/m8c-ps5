@@ -132,6 +132,15 @@ PADSPK needs the foreground user id + S16 MONO (stereo mixed down); MAIN
 needs the SYSTEM user id. Opened fine on console (uid 292064011), no
 underruns with both; audibility confirmed by ear = pending.
 
+## Quit to home screen (2026-09-30)
+
+Returning from main left the app slot open -> black screen, and the hbldr
+web loader then wedged (launches hung) until the user pressed PS.
+Fix (same as the Radio app): after releasing M8 + audio, call
+sceSystemServiceKillApp(sceSystemServiceGetAppIdOfRunningBigApp(), -1, 0, 0)
+before SDL_Quit. Confirmed on console: R3 + Create returns to home.
+Quit combo: R3 + Create (or L2); reset display: L3 + Create.
+
 ## Open items
 
 1. TV display mirror: needs launch as "bigapp" (Homebrew Loader PKG context)

@@ -118,3 +118,16 @@ int ps5_kill_previous_instance(void) {
   }
   return killed;
 }
+
+int sceSystemServiceGetAppIdOfRunningBigApp(void);
+int sceSystemServiceKillApp(int app_id, int opt, int method, int reason);
+
+void ps5_exit_to_home(void) {
+  const int app_id = sceSystemServiceGetAppIdOfRunningBigApp();
+  ps5_logf("exit: killing app 0x%x", app_id);
+  if (app_id > 0) {
+    const int rc = sceSystemServiceKillApp(app_id, -1, 0, 0);
+    ps5_logf("exit: KillApp -> 0x%08X", rc);
+  }
+  unlink("/data/m8c.pid");
+}

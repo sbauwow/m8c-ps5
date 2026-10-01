@@ -28,6 +28,11 @@ void ps5_logf(const char *fmt, ...);
 // Returns the killed pid, or 0. Call before the log and USB are opened.
 int ps5_kill_previous_instance(void);
 
+// Closes this app's slot so the system returns to the home screen (the same
+// exit the PS5 Radio app uses). Returning from main alone leaves the slot
+// open with nothing drawing: a black screen. Does not return on success.
+void ps5_exit_to_home(void);
+
 // Replaces SDL_GetPrefPath("", file) on PS5: flat /data/m8c_<file>.
 const char *ps5_pref_path(const char *filename);
 
