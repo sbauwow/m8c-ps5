@@ -16,6 +16,7 @@
 
 #include "audio.h"
 #include "ps4_shims.h"
+#include "ps5_shims.h"
 #include "usb_ps4.h"
 #include "usbio_ps4.h"
 
@@ -29,6 +30,23 @@ static volatile int audio_running = 0;
 static SDL_Thread *out_thread = NULL;
 static int32_t out_handle = -1; // TV / system main output
 static int32_t pad_handle = -1; // DualSense speaker (mono)
+
+// Output modes, in toggle order. Names are the audio_device_name values.
+enum { MODE_TV, MODE_SPEAKER, MODE_BOTH, MODE_COUNT };
+static const char *const mode_names[MODE_COUNT] = {"Default", "speaker", "both"};
+static const char *const mode_labels[MODE_COUNT] = {"TV", "controller speaker",
+                                                    "TV + controller speaker"};
+static int cur_mode = MODE_TV;
+
+static int mode_from_name(const char *name) {
+  if (name != NULL && SDL_strcasecmp(name, "speaker") == 0) {
+    return MODE_SPEAKER;
+  }
+  if (name != NULL && SDL_strcasecmp(name, "both") == 0) {
+    return MODE_BOTH;
+  }
+  return MODE_TV;
+}
 
 // Input frames pulled from the ring in chunks (one lock per chunk).
 static uint8_t in_chunk[1024 * 4];
@@ -151,9 +169,9 @@ static int open_pad_speaker(void) {
 int audio_init(unsigned int audio_buffer_size, const char *output_device_name) {
   (void)audio_buffer_size;
   ps4_stage("audio: native init");
-  const int want_pad = output_device_name != NULL && (SDL_strcasecmp(output_device_name, "speaker") == 0 ||
-                                                      SDL_strcasecmp(output_device_name, "both") == 0);
-  const int want_main = !(output_device_name != NULL && SDL_strcasecmp(output_device_name, "speaker") == 0);
+  cur_mode = mode_from_name(output_device_name);
+  const int want_pad = cur_mode != MODE_TV;
+  const int want_main = cur_mode != MODE_SPEAKER;
   ps4_logf("audio: output '%s' (main %d, pad speaker %d)",
            output_device_name ? output_device_name : "(null)", want_main, want_pad);
 
@@ -224,8 +242,52 @@ void audio_destroy() {
   ps4_logf("audio: closed");
 }
 
+// Cycles TV -> controller speaker -> both. Only the output ports change; the
+// USB capture keeps running, so the out thread is paused around the swap.
 void toggle_audio(unsigned int audio_buffer_size, const char *output_device_name) {
   (void)audio_buffer_size;
   (void)output_device_name;
-  ps4_logf("audio: toggle not implemented");
+  if (!audio_running) {
+    return;
+  }
+  audio_running = 0;
+  SDL_WaitThread(out_thread, NULL);
+  out_thread = NULL;
+  if (out_handle > 0) {
+    sceAudioOutClose(out_handle);
+    out_handle = -1;
+  }
+  if (pad_handle > 0) {
+    sceAudioOutClose(pad_handle);
+    pad_handle = -1;
+  }
+
+  cur_mode = (cur_mode + 1) % MODE_COUNT;
+  if (cur_mode != MODE_TV && !open_pad_speaker()) {
+    cur_mode = MODE_TV; // no speaker (no foreground user?): fall back to TV
+  }
+  if (cur_mode != MODE_SPEAKER) {
+    out_handle = sceAudioOutOpen(ORBIS_USER_SERVICE_USER_ID_SYSTEM, ORBIS_AUDIO_OUT_PORT_TYPE_MAIN,
+                                 0, OUT_GRANULARITY, OUT_RATE,
+                                 ORBIS_AUDIO_OUT_PARAM_FORMAT_S16_STEREO);
+    if (out_handle <= 0) {
+      ps4_logf("audio: sceAudioOutOpen -> 0x%08X", out_handle);
+      out_handle = -1;
+    }
+  }
+  ps4_logf("audio: output now %s", mode_names[cur_mode]);
+
+  char msg[64];
+  SDL_snprintf(msg, sizeof(msg), "m8c audio: %s", mode_labels[cur_mode]);
+  ps5_notify(msg);
+
+  if (out_handle <= 0 && pad_handle <= 0) {
+    ps5_notify("m8c audio: no output could be opened");
+    return;
+  }
+  in_frames = in_pos = 0;
+  audio_running = 1;
+  out_thread = SDL_CreateThread(out_thread_fn, "m8c_audio_out", NULL);
 }
+
+const char *ps5_audio_mode_name(void) { return mode_names[cur_mode]; }

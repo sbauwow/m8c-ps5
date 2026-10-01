@@ -33,6 +33,13 @@ int ps5_kill_previous_instance(void);
 // open with nothing drawing: a black screen. Does not return on success.
 void ps5_exit_to_home(void);
 
+// Current audio output as its audio_device_name value ("Default", "speaker",
+// "both"); implemented in audio_native_ps5.c next to toggle_audio().
+const char *ps5_audio_mode_name(void);
+
+// Shows a PS5 system notification (top-right toast).
+void ps5_notify(const char *text);
+
 // Replaces SDL_GetPrefPath("", file) on PS5: flat /data/m8c_<file>.
 const char *ps5_pref_path(const char *filename);
 

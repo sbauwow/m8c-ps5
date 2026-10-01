@@ -97,9 +97,10 @@ The launcher never changes when m8c is updated: `make deploy` only replaces
 | OPTION | **Circle** |
 | EDIT | **Cross** |
 | Reset display | **L3** + Create/L2 |
+| Cycle audio output | **Triangle** + Create/L2 |
 | **Quit m8c** | **R3** + Create/L2 |
 
-Triangle, Square, L1, R1 and the right stick are unmapped. Quitting returns you to the PS5 home
+Square, L1, R1 and the right stick are unmapped. Triangle is only used in the audio combo. Quitting returns you to the PS5 home
 screen. The PS button only goes to the home screen and leaves m8c running.
 
 ### Remapping
@@ -130,6 +131,12 @@ Set `audio_device_name` in the `[audio]` section of `/data/m8c_config.ini`:
 | `Default` | TV / system output. This includes a headset on the DualSense jack, following the PS5 sound settings. |
 | `speaker` | DualSense speaker only |
 | `both` | TV and DualSense speaker |
+
+Or switch while m8c runs: **Triangle + Create** cycles TV → controller speaker → both. A
+notification shows the new mode, and the choice is saved to the config for the next launch.
+
+A headset on the DualSense jack follows the PS5's own audio routing (Settings → Sound → Audio
+Output), so use `Default` or `both` for headphones. `speaker` sends nothing to the main output.
 
 The DualSense speaker only takes mono, so the M8's stereo is mixed down. Audio is captured from
 the M8 over USB at 44.1 kHz and resampled to 48 kHz.

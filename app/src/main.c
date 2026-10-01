@@ -273,6 +273,11 @@ int main(const int argc, char *argv[]) {
             break;
           case msg_toggle_audio:
             toggle_audio(conf.audio_buffer_size, conf.audio_device_name);
+#ifdef PS5
+            // Keep the choice for reconnects and the next launch.
+            conf.audio_device_name = ps5_audio_mode_name();
+            write_config(&conf);
+#endif
             break;
           default:
             break;

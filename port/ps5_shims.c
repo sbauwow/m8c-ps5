@@ -131,3 +131,16 @@ void ps5_exit_to_home(void) {
   }
   unlink("/data/m8c.pid");
 }
+
+typedef struct {
+  char unused[45];
+  char message[3075];
+} notify_request_t;
+int sceKernelSendNotificationRequest(int device, notify_request_t *req, size_t size, int blocking);
+
+void ps5_notify(const char *text) {
+  notify_request_t req;
+  memset(&req, 0, sizeof(req));
+  strncpy(req.message, text, sizeof(req.message) - 1);
+  sceKernelSendNotificationRequest(0, &req, sizeof(req), 0);
+}

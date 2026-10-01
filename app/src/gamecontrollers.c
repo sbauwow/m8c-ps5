@@ -189,6 +189,13 @@ input_msg_s gamecontrollers_handle_special_messages(const config_params_s *conf)
              (SDL_GameControllerGetButton(game_controllers[gc], conf->gamepad_select) ||
               SDL_GameControllerGetAxis(game_controllers[gc], conf->gamepad_analog_axis_select)))
       msg = (input_msg_s){special, msg_reset_display, 0, 0};
+#ifdef PS5
+    // Triangle + select (Create/L2): cycle audio output TV/speaker/both.
+    else if (SDL_GameControllerGetButton(game_controllers[gc], SDL_CONTROLLER_BUTTON_Y) &&
+             (SDL_GameControllerGetButton(game_controllers[gc], conf->gamepad_select) ||
+              SDL_GameControllerGetAxis(game_controllers[gc], conf->gamepad_analog_axis_select)))
+      msg = (input_msg_s){special, msg_toggle_audio, 0, 0};
+#endif
   }
   return msg;
 }
