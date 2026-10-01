@@ -47,6 +47,46 @@ http://<ps5-ip>:8080/hbldr?pipe=0&daemon=0&path=/data/homebrew/m8c/eboot.elf
 Only one copy of m8c runs at a time. On startup, m8c kills any earlier copy listed in
 `/data/m8c.pid`.
 
+## Home-screen icon (launcher title)
+
+m8c can also start from a normal game tile on the PS5 home screen (it shows under Games / Media).
+The tile is a tiny native title, `PPSA99042` "m8c" (source in `launcher/`). Its only job is to ask
+the local loader to start the real m8c:
+
+```
+GET http://127.0.0.1:8080/hbldr?pipe=0&daemon=0&path=/data/homebrew/m8c/eboot.elf
+```
+
+The loader then swaps the launcher for m8c. m8c itself stays an hbldr payload because a sandboxed
+title can't use sceUsbd or write `/data`. ShadowMountPlus registers the folder as an installed
+game.
+
+Requirements: ShadowMountPlus running (it scans `/data/homebrew`), plus websrv on :8080 for every
+launch. If the loader isn't up, the launcher shows a notification instead.
+
+### Building and installing the launcher
+
+The launcher is built with
+[ps5-native-app-boilerplate](https://github.com/blackbearreloaded/ps5-native-app-boilerplate)
+(local checkout: `~/m8c-ps5-title`). Copy `launcher/main.cpp` to `<boilerplate>/launcher/src/`
+and `launcher/sce_sys/*` over the boilerplate's `sce_sys/`. Then run:
+
+```sh
+cd <boilerplate>
+PATH=$(echo "$PATH" | tr ':' '\n' | grep -v theos | paste -sd:) \
+LLVM_CONFIG=~/ps5-jailbreak/refs/releases/sdk/llvm-config-shim.sh \
+APP_SOURCE_DIR=launcher/src APP_DEFINITIONS= APP_INCLUDE_PATHS= APP_STATIC_ARCHIVES= \
+USE_CCACHE=0 bash tools/build.sh Folder
+```
+
+Upload the whole `dist/PPSA99042/` folder (eboot.bin, sce_module/, sce_sys/, assets/) to
+`/data/homebrew/PPSA99042/`, and wait for ShadowMountPlus to pick it up (it scans every 15 s).
+The launcher never changes when m8c is updated: `make deploy` only replaces
+`/data/homebrew/m8c/eboot.elf`.
+
+> ftpsrv decrypts SELF files when they are read back, so a downloaded `eboot.bin` or `libc.prx`
+> won't match what you uploaded (different size, `.ELF` magic). The stored file is fine.
+
 ## Controls (DualSense)
 
 | M8 key | DualSense |
@@ -123,5 +163,6 @@ More detail on the port, its pitfalls and its history is in `notes/RECON.md`.
 - `port/`: PS5 backends. sceUsbd (loaded at runtime with dlopen) handles the USB serial link and
   UAC2 audio capture. sceAudioOut handles TV and pad-speaker output. Also logging, the single-copy
   guard and exit-to-home.
+- `launcher/`: the home-screen launcher title (source + param.json/icon).
 - `probe/`: the pre-port USB probe payload.
 - `notes/RECON.md`: porting record.
