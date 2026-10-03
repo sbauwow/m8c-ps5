@@ -20,7 +20,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
------------
-app/src/ is upstream m8c (https://github.com/laamaa/m8c), Copyright (c) 2021
-Jonne Kokkonen, MIT licensed, with bundled third-party notices. See
-app/src/LICENSE.
