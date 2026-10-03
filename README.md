@@ -4,7 +4,7 @@
 jailbroken PS5. Plug the M8 into the console's USB port: the M8 screen shows on the TV, audio
 plays through the TV and/or the DualSense speaker, and the DualSense drives the M8.
 
-Ported from the PS4 port (`~/m8c-ps4`, build C7). Tested on PS5 firmware 11.60 with an M8
+Ported from [m8c-ps4](https://github.com/sbauwow/m8c-ps4) (build C7). Tested on PS5 firmware 11.60 with an M8
 Headless (Teensy 4.1, firmware 6.5.2).
 
 ## Requirements
@@ -14,31 +14,19 @@ Headless (Teensy 4.1, firmware 6.5.2).
 - **ftpsrv** running (FTP on port **2121**), used for uploads, config and logs.
 - An M8 Headless (or an M8 in headless mode) on a USB port of the PS5.
 
-## Build (Linux host)
+## Install (prebuilt)
 
-- ps5-payload-sdk at `~/ps5-jailbreak/refs/releases/sdk/ps5-payload-sdk`, built with LLVM 21.
-- PacBrew homebrew sysroot (SDL2 2.30.12) unpacked at `downloads/opt/ps5-payload-sdk/`. It is
-  gitignored, so fetch it again into `downloads/` on a fresh clone.
-
-```sh
-make            # -> m8c_ps5.elf
-```
-
-The Makefile sets `LLVM_CONFIG` to the SDK's llvm-config shim. Without it, the wrong clang
-(theos clang-11 or system clang 22) gets picked up. See `notes/RECON.md` for toolchain details.
-
-## Install and launch
+No toolchain needed: the built payload, [`m8c_ps5.elf`](m8c_ps5.elf), is committed in this
+repo. Upload it to the console and launch it through the loader:
 
 ```sh
-make deploy                      # PS5_HOST defaults to 192.168.0.106
-make deploy PS5_HOST=<ps5-ip>
+PS5=<ps5-ip>
+curl -T m8c_ps5.elf --ftp-create-dirs ftp://$PS5:2121/data/homebrew/m8c/eboot.elf
+curl "http://$PS5:8080/hbldr?pipe=0&daemon=0&path=/data/homebrew/m8c/eboot.elf"
 ```
 
-`make deploy` uploads the ELF to `/data/homebrew/m8c/eboot.elf` over FTP. It then launches it with:
-
-```
-http://<ps5-ip>:8080/hbldr?pipe=0&daemon=0&path=/data/homebrew/m8c/eboot.elf
-```
+Any FTP client works for the upload, and the launch URL can be opened from a browser instead.
+After the first upload, relaunching is just the second line (or the home-screen tile below).
 
 > **`daemon=0` is required.** A `daemon=1` launch gets no video memory, so the TV stays black
 > while audio still plays. That instance also keeps running in the background and fights the next
@@ -46,6 +34,22 @@ http://<ps5-ip>:8080/hbldr?pipe=0&daemon=0&path=/data/homebrew/m8c/eboot.elf
 
 Only one copy of m8c runs at a time. On startup, m8c kills any earlier copy listed in
 `/data/m8c.pid`.
+
+## Build from source (Linux host)
+
+Only needed if you change the code.
+
+- ps5-payload-sdk at `~/ps5-jailbreak/refs/releases/sdk/ps5-payload-sdk`, built with LLVM 21.
+- PacBrew homebrew sysroot (SDL2 2.30.12) unpacked at `downloads/opt/ps5-payload-sdk/`. It is
+  gitignored, so fetch it again into `downloads/` on a fresh clone.
+
+```sh
+make                             # -> m8c_ps5.elf
+make deploy PS5_HOST=<ps5-ip>    # upload + launch, same as the two curl lines above
+```
+
+The Makefile sets `LLVM_CONFIG` to the SDK's llvm-config shim. Without it, the wrong clang
+(theos clang-11 or system clang 22) gets picked up. See `notes/RECON.md` for toolchain details.
 
 ## Home-screen icon (launcher title)
 
@@ -81,7 +85,7 @@ USE_CCACHE=0 bash tools/build.sh Folder
 
 Upload the whole `dist/PPSA99042/` folder (eboot.bin, sce_module/, sce_sys/, assets/) to
 `/data/homebrew/PPSA99042/`, and wait for ShadowMountPlus to pick it up (it scans every 15 s).
-The launcher never changes when m8c is updated: `make deploy` only replaces
+The launcher never changes when m8c is updated: updating only replaces
 `/data/homebrew/m8c/eboot.elf`.
 
 > ftpsrv decrypts SELF files when they are read back, so a downloaded `eboot.bin` or `libc.prx`
@@ -156,7 +160,7 @@ Read the log with `curl ftp://<ps5-ip>:2121/data/m8c.log`.
 
 | Symptom | Cause / fix |
 |---|---|
-| Black screen, audio plays | Launched with `daemon=1`. Relaunch with `make deploy`. |
+| Black screen, audio plays | Launched with `daemon=1`. Relaunch with `daemon=0`. |
 | Screen flickers, audio choppy | Two copies are sharing the M8, often a stray `daemon=1` one (shows up as `payload` in a process list). Relaunching kills it via the pidfile. Check the log for `SLIP error` lines and `iso` below ~176000 B/s. |
 | Log says `Device not detected` | Unplug the M8 and plug it back in. m8c waits for it (`wait_for_device=true`). |
 | Loader launches hang or return nothing | The system still has a dead app open. Press the PS button, then launch again. |
@@ -173,3 +177,8 @@ More detail on the port, its pitfalls and its history is in `notes/RECON.md`.
 - `launcher/`: the home-screen launcher title (source + param.json/icon).
 - `probe/`: the pre-port USB probe payload.
 - `notes/RECON.md`: porting record.
+
+## License
+
+MIT, see [LICENSE](LICENSE). `app/src/` is upstream m8c under its own MIT license and bundled
+notices ([app/src/LICENSE](app/src/LICENSE)).
