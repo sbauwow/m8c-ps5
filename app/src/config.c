@@ -64,7 +64,13 @@ config_params_s init_config(char *filename) {
   c.gamepad_left = SDL_CONTROLLER_BUTTON_DPAD_LEFT;
   c.gamepad_down = SDL_CONTROLLER_BUTTON_DPAD_DOWN;
   c.gamepad_right = SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
+#ifdef PS4
+  // GoldHEN takes Share (BACK) for its own menu, and the L2 axis fallback
+  // never registers, so SHIFT defaults to L1.
+  c.gamepad_select = SDL_CONTROLLER_BUTTON_LEFTSHOULDER;
+#else
   c.gamepad_select = SDL_CONTROLLER_BUTTON_BACK;
+#endif
   c.gamepad_start = SDL_CONTROLLER_BUTTON_START;
   c.gamepad_opt = SDL_CONTROLLER_BUTTON_B;
   c.gamepad_edit = SDL_CONTROLLER_BUTTON_A;
